@@ -4,10 +4,11 @@ function Clock() {
 
   const createDiv = (target, text, container) => {
     const e = document.createElement("DIV");
-    e.style.backgroundColor = "#00FF00";
+    e.style.backgroundColor = "#660000";
     e.style.color = "#FF0000";
-    //      e.style.borderStyle = "solid";
-    e.style.borderColor = "#FF0000";
+    e.style.borderStyle = "solid";
+    e.style.borderColor = "#FF6666";
+    e.style.borderRadius = "50%";
     e.style.fontFamily = "Arial";
     e.style.fontSize = 12;
     e.style.display = "block";
@@ -18,6 +19,14 @@ function Clock() {
     e.style.height = target.h || 20;
     container.appendChild(e);
     e.innerHTML = `<div style="position: absolute; top: 50%; text-align: center; width: 100%; transform: translateY(-50%);">${text}</div>`;
+    //    centerize(e);
+
+    e.move = (target) => {
+      e.style.left = target.x - (parseFloat(e.style.width) / 2.0);
+      e.style.top = target.y - (parseFloat(e.style.height) / 2.0);
+      //      console.log(target, e.style.width, e.style.left);
+    }
+
     return e;
   }
 
@@ -69,10 +78,8 @@ function Clock() {
           y: c.y - (config.diameter * cos(angle))
         }
 
-        this.e.style.left = target.x;
-        this.e.style.top = target.y;
-        //          recenter(this.e, "left", "width");
-        //          recenter(this.e, "top", "height");
+        this.e.style.left = target.x - (parseFloat(div.style.width) / 2.0);
+        this.e.style.top = target.y - (parseFloat(div.style.height) / 2.0);
 
         this.diff = {
           x: parseFloat(this.prev.style.left) - parseFloat(this.e.style.left),
@@ -81,7 +88,7 @@ function Clock() {
 
         //          console.log("prev: ", this.prev, ", diff: ", this.diff, this.e);
       },
-      update: function() {
+      update: function(center) {
         //          console.log(label, ", angle:", angle, ", prev: ", prev, c, ", target: ", target, ", pos: ", pos);
 
         const prev = {
@@ -135,8 +142,8 @@ function Clock() {
       index,
       e: div,
       prev,
-      update: function() {
-        const prev = {
+      update: function(center) {
+        const prev = /*index == 0 ? center : */{
           x: parseFloat(this.prev.style.left),
           y: parseFloat(this.prev.style.top)
         }
@@ -145,6 +152,8 @@ function Clock() {
           x: prev.x + (r * sin(getAngle())),
           y: prev.y - (r * cos(getAngle()))
         }
+        //        target.x = target.x - (index == 0 ? parseFloat(this.e.style.width) / 2.0 : 0);
+        //        target.y = target.y - (index == 0 ? parseFloat(this.e.style.height) / 2.0 : 0);
 
         const pos = {
           x: parseFloat(this.e.style.left),
@@ -155,14 +164,8 @@ function Clock() {
 
         this.e.style.left = translated.x;
         this.e.style.top = translated.y;
-        //          recenter(this.e, "left", "width");
-        //          recenter(this.e, "top", "height");
       }
     }
-  }
-
-  const recenter = (e, attr, attr2) => {
-    e.style[attr] = parseFloat(e.style[attr]) - (parseFloat(e.style[attr2]) / 2.0);
   }
 
   const sin = (v) => Math.sin(v * Math.PI / 180);
@@ -170,12 +173,12 @@ function Clock() {
   const tan = (v) => Math.tan(v * Math.PI / 180);
 
   const init = async (c) => {
-    console.log("init: ", c);
+    //    console.log("init: ", c);
     container = c;
-    console.log("container: ", container);
+    //    console.log("container: ", container);
 
-    center = createDiv({ x: 0, y: 0, w: 5, h: 5 }, "", container);
-    center.style.backgroundColor = "#0000FF";
+    center = createDiv({ x: 0, y: 0, w: 30, h: 30 }, "", container);
+    center.style.display = "none";
 
     //clocks
     for (let i = 0; i < 12; i++) {
@@ -185,18 +188,19 @@ function Clock() {
         prev: i == 0 ? center : clocks[i - 1].e,
       });
       clocks.push(c);
-      c.e.style.backgroundColor = "";
-      c.e.style.borderStyle = "solid";
-      c.e.style.borderColor = "#FF6666";
-      c.e.style.borderRadius = "50%";
     }
 
     //hours
     let len = 6;
     for (let i = 0; i < len; i++) {
+      const hAngle = 360 / 12;
       const h = createNeedle({
         index: i,
-        getAngle: () => 360 / 12 * new Date().getHours(),
+        getAngle: () => {
+          const now = new Date();
+          return (hAngle * now.getHours()) + //hour angle +
+            (hAngle / 60 * now.getMinutes()); //minute angle
+        },
         r: 8,
         size: { w: 5, h: 5 },
         config,
@@ -204,11 +208,6 @@ function Clock() {
       });
       needle.hour.push(h);
       h.e.style.backgroundColor = "";
-      h.e.style.borderStyle = "solid";
-      h.e.style.borderColor = "#FF0000";
-      h.e.style.borderRadius = "50%";
-      recenter(h.e, "left", "width");
-      recenter(h.e, "top", "height");
     }
 
     //minutes
@@ -223,37 +222,26 @@ function Clock() {
         prev: i == 0 ? center : needle.minute[i - 1].e
       });
       needle.minute.push(m);
-      //      m.e.style.backgroundColor = "#FF8888";
       m.e.style.backgroundColor = "";
-      m.e.style.borderStyle = "solid";
-      m.e.style.borderColor = "#FF8888";
-      m.e.style.borderRadius = "50%";
-      recenter(m.e, "left", "width");
-      recenter(m.e, "top", "height");
     }
 
     //seconds
-    len = 1;
+    len = 10;
     for (let i = 0; i < len; i++) {
       const s = createNeedle({
         index: i,
         getAngle: () => 360 / 60 * new Date().getSeconds(),
-        r: (8 * 10),
+        r: 8,
         size: { w: 5, h: 5 },
         config,
         prev: i == 0 ? center : needle.second[i - 1].e
       });
       needle.second.push(s);
-      s.e.style.backgroundColor = "";
-      s.e.style.borderStyle = "solid";
-      s.e.style.borderColor = "#FFFFFF";
-      s.e.style.borderRadius = "50%";
-      recenter(s.e, "left", "width");
-      recenter(s.e, "top", "height");
+      s.e.style.backgroundColor = "#FF6666";
+      s.e.style.borderStyle = "none";
     }
 
     window.addEventListener("mousemove", (event) => {
-      //      console.log(`x: ${event.x}, y: ${event.y}`);
       target.x = event.x;
       target.y = event.y;
     });
@@ -267,25 +255,22 @@ function Clock() {
       const elapsed = (now - executionTime);
       totalElapsed += elapsed;
 
-      center.style.left = target.x;
-      recenter(center, "left", "width");
-      center.style.top = target.y;
-      recenter(center, "top", "height");
+      center.move(target);
 
       clocks.map((clock, index) => {
-        clock.update();
+        clock.update(target);
       });
 
       needle.hour.map((hour, index) => {
-        hour.update();
+        hour.update(target);
       });
 
       needle.minute.map((minute, index) => {
-        minute.update();
+        minute.update(target);
       });
 
       needle.second.map((second, index) => {
-        second.update();
+        second.update(target);
       });
 
       start();
