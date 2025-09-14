@@ -1,0 +1,328 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+
+<head>
+</head>
+
+<body bgcolor="#22222A">
+
+  <div id="container"
+    style="display: none; position: absolute; border-style: solid; border-color: #FFCC88; left: 200px; top: 200px; width: 600px; height: 600px; overflow: visible;" />
+  <script language="javascript">
+
+    const createDiv = (target, text, container) => {
+      const e = document.createElement("DIV");
+      e.style.backgroundColor = "#00FF00";
+      e.style.color = "#FF0000";
+      //      e.style.borderStyle = "solid";
+      e.style.borderColor = "#FF0000";
+      e.style.fontFamily = "Arial";
+      e.style.fontSize = 12;
+      e.style.display = "block";
+      e.style.position = "absolute";
+      e.style.left = target.x;
+      e.style.top = target.y;
+      e.style.width = target.w || 20;
+      e.style.height = target.h || 20;
+      container.appendChild(e);
+      e.innerHTML = `<div style="position: absolute; top: 50%; text-align: center; width: 100%; transform: translateY(-50%);">${text}</div>`;
+      return e;
+    }
+
+    const container = document.body;
+    //const container = document.getElementById("container");
+    container.style.display = "block";
+    container.style.overflow = "hidden";
+    container.style.backgroundColor = "#000000";
+
+    const center = createDiv({x: 0, y: 0, w: 5, h: 5}, "", container);
+    center.style.backgroundColor = "#0000FF";
+
+    const translateAnim = (from, to, speed) => {
+      const xDiff = ((to.x - from.x) * speed);
+      const x = Math.abs(xDiff) < 1 ? to.x : from.x + xDiff;
+      //          console.log(`x: ${pos.x}, target: ${target.x}, diff: ${xDiff} (${Math.abs(xDiff)}) -> ${x}`);
+
+      const yDiff = ((to.y - from.y) * speed);
+      const y = Math.abs(yDiff) < 1 ? to.y : from.y + yDiff;
+      //          console.log(`y: ${pos.y}, target: ${target.y}, diff: ${yDiff} (${Math.abs(yDiff)}) -> ${y}`);
+
+      return {
+        x: x,
+        y: y
+      }
+    }
+
+    //clock body
+    const createClock = ({
+      hour,
+      config,
+      prev
+    }) => {
+      const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+      const angle = hour * 30;
+      const text = hours[hour];
+      return createClockObject({
+        hour, angle, text, size: null, config, prev
+      });
+    }
+
+    const createClockObject = ({index, angle, text, size, config, prev}) => {
+      const div = createDiv({x: 0, y: 0, w: size?.w || null, h: size?.h || null}, text, container);
+      const c = {
+        index: index,
+        e: div,
+        prev,
+        init: function () {
+          const label = this.e.children[0].innerHTML;
+
+          const c = {
+            x: parseFloat(center.style.left),
+            y: parseFloat(center.style.top)
+          }
+
+          const target = {
+            x: c.x + (config.diameter * sin(angle)),
+            y: c.y - (config.diameter * cos(angle))
+          }
+
+          this.e.style.left = target.x;
+          this.e.style.top = target.y;
+          //          recenter(this.e, "left", "width");
+          //          recenter(this.e, "top", "height");
+
+          this.diff = {
+            x: parseFloat(this.prev.style.left) - parseFloat(this.e.style.left),
+            y: parseFloat(this.prev.style.top) - parseFloat(this.e.style.top)
+          };
+
+          console.log("prev: ", this.prev, ", diff: ", this.diff, this.e);
+        },
+        update: function () {
+          //          console.log(label, ", angle:", angle, ", prev: ", prev, c, ", target: ", target, ", pos: ", pos);
+
+          const prev = {
+            x: parseFloat(this.prev.style.left),
+            y: parseFloat(this.prev.style.top)
+          }
+
+          const target = {
+            x: prev.x - this.diff.x,
+            y: prev.y - this.diff.y
+          }
+
+          //absolute
+          //          this.e.style.left = target.x;
+          //          this.e.style.top = target.y;
+
+          //translate
+          const pos = {
+            x: parseFloat(this.e.style.left),
+            y: parseFloat(this.e.style.top)
+          }
+
+          const translated = translateAnim(pos, target, config.speed);
+          //          console.log(label, pos, target, translated);
+
+          this.e.style.left = translated.x;
+          this.e.style.top = translated.y;
+          //          console.log("width: " + this.e.style.width);
+        },
+        elapsed: 0
+      }
+      c.init();
+      return c;
+    }
+    // end of clock body
+
+    const createNeedle = ({
+      index,
+      getAngle,
+      r,
+      size,
+      config,
+      prev
+    }) => {
+      const div = createDiv(
+        {x: 0, y: 0, w: size?.w || 5, h: size?.h || 5},
+        "",
+        container
+      );
+      return {
+        index,
+        e: div,
+        prev,
+        update: function () {
+          const prev = {
+            x: parseFloat(this.prev.style.left),
+            y: parseFloat(this.prev.style.top)
+          }
+
+          const target = {
+            x: prev.x + (r * sin(getAngle())),
+            y: prev.y - (r * cos(getAngle()))
+          }
+
+          const pos = {
+            x: parseFloat(this.e.style.left),
+            y: parseFloat(this.e.style.top)
+          }
+
+          const translated = translateAnim(pos, target, config.speed);
+
+          this.e.style.left = translated.x;
+          this.e.style.top = translated.y;
+          //          recenter(this.e, "left", "width");
+          //          recenter(this.e, "top", "height");
+        }
+      }
+    }
+
+    const recenter = (e, attr, attr2) => {
+      e.style[attr] = parseFloat(e.style[attr]) - (parseFloat(e.style[attr2]) / 2.0);
+    }
+
+    const sin = (v) => Math.sin(v * Math.PI / 180);
+    const cos = (v) => Math.cos(v * Math.PI / 180);
+    const tan = (v) => Math.tan(v * Math.PI / 180);
+
+    const config = {
+      speed: 0.2,
+      diameter: 100,
+      interval: 1
+    }
+
+    //create clocks
+    const clocks = []; //[createClock(6, config, target)]
+    for (let i = 0; i < 12; i++) {
+      const c = createClock({
+        hour: i,
+        config,
+        prev: i == 0 ? center : clocks[i - 1].e,
+      });
+      clocks.push(c);
+      c.e.style.backgroundColor = "";
+      c.e.style.borderStyle = "solid";
+      c.e.style.borderColor = "#FF6666";
+      c.e.style.borderRadius = "50%";
+    }
+
+    //needle
+    const needle = {
+      hour: [],
+      minute: [],
+      second: []
+    }
+
+    //hours
+    let len = 6;
+    for (let i = 0; i < len; i++) {
+      const h = createNeedle({
+        index: i,
+        getAngle: () => 360 / 12 * new Date().getHours(),
+        r: 8,
+        size: {w: 5, h: 5},
+        config,
+        prev: i == 0 ? center : needle.hour[i - 1].e
+      });
+      needle.hour.push(h);
+      h.e.style.backgroundColor = "";
+      h.e.style.borderStyle = "solid";
+      h.e.style.borderColor = "#FF0000";
+      h.e.style.borderRadius = "50%";
+      recenter(h.e, "left", "width");
+      recenter(h.e, "top", "height");
+    }
+
+    //minutes
+    len = 10;
+    for (let i = 0; i < len; i++) {
+      const m = createNeedle({
+        index: i,
+        getAngle: () => 360 / 60 * new Date().getMinutes(),
+        r: 8,
+        size: {w: 5, h: 5},
+        config,
+        prev: i == 0 ? center : needle.minute[i - 1].e
+      });
+      needle.minute.push(m);
+      //      m.e.style.backgroundColor = "#FF8888";
+      m.e.style.backgroundColor = "";
+      m.e.style.borderStyle = "solid";
+      m.e.style.borderColor = "#FF8888";
+      m.e.style.borderRadius = "50%";
+      recenter(m.e, "left", "width");
+      recenter(m.e, "top", "height");
+    }
+
+    //seconds
+    len = 1;
+    for (let i = 0; i < len; i++) {
+      const s = createNeedle({
+        index: i,
+        getAngle: () => 360 / 60 * new Date().getSeconds(),
+        r: (8 * 10),
+        size: {w: 5, h: 5},
+        config,
+        prev: i == 0 ? center : needle.second[i - 1].e
+      });
+      needle.second.push(s);
+      s.e.style.backgroundColor = "";
+      s.e.style.borderStyle = "solid";
+      s.e.style.borderColor = "#FFFFFF";
+      s.e.style.borderRadius = "50%";
+      recenter(s.e, "left", "width");
+      recenter(s.e, "top", "height");
+    }
+
+    target = {
+      x: 0,
+      y: 0
+    }
+
+    document.onmousemove = event => {
+      //      console.log(`x: ${event.x}, y: ${event.y}`);
+      target.x = event.x;
+      target.y = event.y;
+    }
+
+    let executionTime = 0;
+    let totalElapsed = 0;
+    const start = async () => {
+      executionTime = new Date().getTime();
+      setTimeout(() => {
+        const now = new Date().getTime();
+        const elapsed = (now - executionTime);
+        totalElapsed += elapsed;
+
+        center.style.left = target.x;
+        recenter(center, "left", "width");
+        center.style.top = target.y;
+        recenter(center, "top", "height");
+
+        clocks.map((clock, index) => {
+          clock.update();
+        });
+
+        needle.hour.map((hour, index) => {
+          hour.update();
+        });
+
+        needle.minute.map((minute, index) => {
+          minute.update();
+        });
+
+        needle.second.map((second, index) => {
+          second.update();
+        });
+
+        start();
+      }, 1);
+    };
+    start();
+    console.log("started...");
+
+  </script>
+</body>
+
+</html>
