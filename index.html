@@ -9,6 +9,7 @@
   <div id="container"
     style="display: none; position: absolute; border-style: solid; border-color: #FFCC88; left: 200px; top: 200px; width: 600px; height: 600px; overflow: visible;" />
   <script src="./script/clock.js"></script>
+  <script src="./script/lightning.js"></script>
   <script language="javascript">
 
     let container = document.body;
@@ -18,9 +19,17 @@
     container.style.backgroundColor = "#000000";
 
     const clock = new Clock();
-    clock.init(container);
-    clock.start();
-    console.log("started... : ", clock);
+//    clock.init(container);
+//    clock.start();
+
+    const lightning = new Lightning();
+    lightning.init(container);
+    lightning.start();
+
+//    clock.init(container)
+//      .then(lightning.init);
+
+    console.log("started... \nclock: ", clock , ", lightning: ", lightning);
 
   </script>
 </body>

@@ -245,6 +245,8 @@ function Clock() {
       target.x = event.x;
       target.y = event.y;
     });
+
+    return c;
   }
 
   const start = async () => {
