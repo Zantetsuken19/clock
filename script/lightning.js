@@ -38,28 +38,27 @@ function Lightning() {
   }
 
   const start = async () => {
-    let executionTime = new Date().getTime();
-    let totalElapsed = 0;
+    let executionTime = performance.now();
     console.log("start: " + executionTime);
-    setTimeout(() => exec(executionTime, totalElapsed), config.interval);
+    setTimeout(() => exec(executionTime, 0), config.interval);
   }
 
-  const exec = (executionTime, totalElapsed) => {
-    const now = new Date().getTime();
+  const exec = (executionTime, totalFrame) => {
+    const now = performance.now();
     const elapsed = (now - executionTime);
     executionTime = now;
-    totalElapsed += elapsed;
+    totalFrame += elapsed * config.fps / 1000;
 
 //    console.log("exec. now: " + now 
-//      + ", delay: " + config.delay
+//      + ", delay: " + config.fps
 //      + ", elapsed: " + elapsed 
-//      + ", totalElapsed: " + totalElapsed);
-    if (totalElapsed >= config.delay) {
-      console.log("updated on: " + totalElapsed + "...");
-      totalElapsed -= config.delay;
+//      + ", totalFrame: " + totalFrame);
+    if (totalFrame >= config.fps) {
+      console.log("updated on: " + totalFrame + " frames...");
+      totalFrame -= config.fps;
     }
 
-    setTimeout(() => exec(executionTime, totalElapsed), config.interval);
+    setTimeout(() => exec(executionTime, totalFrame), config.interval);
   }
 
   const config = {
